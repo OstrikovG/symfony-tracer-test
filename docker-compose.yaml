@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  php-fpm:
+    container_name: symfony-tracer-test.php
+    hostname: symfony-tracer-test.php
+    extra_hosts:
+      - "${NGINX_ENGINE_HOST}:${NGINX_ENGINE_IP}"
+    env_file:
+      - .env.local
+    environment:
+      XDEBUG_MODE: ${XDEBUG_MODE}
+      XDEBUG_CONFIG: remote_host=${LOOPBACK_IP}
+      PHP_IDE_CONFIG: serverName=${PHPSTORM_SERVER_NAME}
+    build:
+      context: ./docker/php-fpm
+    ports:
+      - '9000:9000'
+    volumes:
+      - .:/var/www/project
+    networks:
+       - default
+
+  nginx:
+    container_name: symfony-tracer-test.nginx
+    hostname: symfony-tracer-test.nginx
+    image: nginx:stable-alpine
+    ports:
+      - "${NGINX_PORT}:80"
+    links:
+      - php-fpm
+    volumes:
+      - .:/var/www/project
+      - ./docker/nginx/logs:/var/log/nginx
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php-fpm
+    networks:
+      - default
